@@ -84,8 +84,10 @@ export function LeaderboardCard({
       whileTap={{ scale: 0.99 }}
     >
       <Card
-        className={`cursor-pointer transition-all duration-300 border-border/40 hover:border-accent/40 ${
-          isTop3 ? 'glass hover:glow-purple' : 'bg-card/60 hover:bg-card/80'
+        className={`cursor-pointer transition-all duration-300 border hover:border-accent/50 ${
+          isTop3 
+            ? 'glass hover:glow-purple border-accent/30 shadow-lg shadow-purple-900/20' 
+            : 'bg-card/60 backdrop-blur-xl border-white/10 hover:bg-card/80 hover:border-white/20 shadow-md'
         }`}
         onClick={onClick}
       >
@@ -133,6 +135,7 @@ export function LeaderboardCard({
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric',
+                    timeZone: 'Asia/Bangkok',
                   })}
                 </span>
                 {video.view_count !== undefined && (
@@ -149,6 +152,7 @@ export function LeaderboardCard({
                       {new Date(video.updated_at).toLocaleTimeString('th-TH', {
                         hour: '2-digit',
                         minute: '2-digit',
+                        timeZone: 'Asia/Bangkok',
                       })}
                     </span>
                   </>

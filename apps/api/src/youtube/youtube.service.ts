@@ -154,80 +154,115 @@ export class YouTubeService {
 
   /**
    * Fetch latest videos from a channel's uploads playlist with statistics.
-   * Uses a 2-step process:
-   * 1. playlistItems.list → get video IDs
-   * 2. videos.list → get snippet + statistics
+   * Uses pagination to keep fetching until it finds `targetNormalVideosCount`
+   * of "normal" videos (excluding Shorts and Live streams).
    */
   async getLatestVideos(
     uploadsPlaylistId: string,
-    maxResults = 20,
+    targetNormalVideosCount = 50,
   ): Promise<YouTubeVideoInfo[]> {
     try {
-      // Step 1: Get video IDs from uploads playlist
-      const playlistRes = await this.yt.playlistItems.list({
-        part: ['contentDetails'],
-        playlistId: uploadsPlaylistId,
-        maxResults,
-      });
+      const allVideos: YouTubeVideoInfo[] = [];
+      let normalVideosCount = 0;
+      let pageToken: string | undefined = undefined;
+      let iterations = 0;
+      const maxIterations = 5; // Safety limit to avoid infinite loops
 
-      const videoIds =
-        playlistRes.data.items
-          ?.map((item) => item.contentDetails?.videoId)
-          .filter((id): id is string => !!id) ?? [];
+      while (
+        normalVideosCount < targetNormalVideosCount &&
+        iterations < maxIterations
+      ) {
+        iterations++;
 
-      if (videoIds.length === 0) {
-        this.logger.warn(`No videos found in playlist: ${uploadsPlaylistId}`);
-        return [];
+        // Step 1: Get video IDs from uploads playlist
+        const playlistRes = await this.yt.playlistItems.list({
+          part: ['contentDetails'],
+          playlistId: uploadsPlaylistId,
+          maxResults: 50, // Max allowed per page by YouTube API
+          pageToken,
+        });
+
+        const videoIds =
+          playlistRes.data.items
+            ?.map((item) => item.contentDetails?.videoId)
+            .filter((id): id is string => !!id) ?? [];
+
+        if (videoIds.length === 0) {
+          break; // No more videos in the playlist
+        }
+
+        // Step 2: Get video details with statistics and content details
+        const videosRes = await this.yt.videos.list({
+          part: [
+            'snippet',
+            'statistics',
+            'contentDetails',
+            'liveStreamingDetails',
+          ],
+          id: videoIds,
+        });
+
+        const parsedVideos =
+          videosRes.data.items?.map((video) => {
+            const durationStr = video.contentDetails?.duration || 'PT0M';
+            const isLive =
+              video.snippet?.liveBroadcastContent === 'live' ||
+              video.snippet?.liveBroadcastContent === 'upcoming' ||
+              !!video.liveStreamingDetails;
+
+            let durationSeconds = 0;
+            const match = durationStr.match(
+              /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/,
+            );
+            if (match) {
+              const h = parseInt(match[1] || '0', 10);
+              const m = parseInt(match[2] || '0', 10);
+              const s = parseInt(match[3] || '0', 10);
+              durationSeconds = h * 3600 + m * 60 + s;
+            }
+            const isShort =
+              (durationSeconds > 0 && durationSeconds <= 61 && !isLive) ||
+              (video.snippet?.title?.toLowerCase().includes('#shorts') ??
+                false);
+
+            return {
+              id: video.id!,
+              title: video.snippet?.title ?? 'Untitled',
+              thumbnailUrl:
+                video.snippet?.thumbnails?.high?.url ??
+                video.snippet?.thumbnails?.default?.url ??
+                null,
+              publishedAt:
+                video.snippet?.publishedAt ?? new Date().toISOString(),
+              viewCount: parseInt(video.statistics?.viewCount ?? '0', 10),
+              isShort,
+              isLive,
+              tags: video.snippet?.tags ?? [],
+            };
+          }) ?? [];
+
+        for (const v of parsedVideos) {
+          allVideos.push(v);
+          if (!v.isShort && !v.isLive) {
+            normalVideosCount++;
+          }
+        }
+
+        pageToken = playlistRes.data.nextPageToken || undefined;
+        if (!pageToken) {
+          break; // No more pages
+        }
       }
 
-      // Step 2: Get video details with statistics and content details
-      const videosRes = await this.yt.videos.list({
-        part: [
-          'snippet',
-          'statistics',
-          'contentDetails',
-          'liveStreamingDetails',
-        ],
-        id: videoIds,
-      });
+      if (allVideos.length === 0) {
+        this.logger.warn(`No videos found in playlist: ${uploadsPlaylistId}`);
+      } else {
+        this.logger.log(
+          `Fetched ${allVideos.length} total videos (found ${normalVideosCount} normal videos in ${iterations} pages) for playlist: ${uploadsPlaylistId}`,
+        );
+      }
 
-      return (
-        videosRes.data.items?.map((video) => {
-          const durationStr = video.contentDetails?.duration || 'PT0M';
-          const isLive =
-            video.snippet?.liveBroadcastContent === 'live' ||
-            video.snippet?.liveBroadcastContent === 'upcoming' ||
-            !!video.liveStreamingDetails;
-
-          let durationSeconds = 0;
-          const match = durationStr.match(
-            /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/,
-          );
-          if (match) {
-            const h = parseInt(match[1] || '0', 10);
-            const m = parseInt(match[2] || '0', 10);
-            const s = parseInt(match[3] || '0', 10);
-            durationSeconds = h * 3600 + m * 60 + s;
-          }
-          const isShort =
-            (durationSeconds > 0 && durationSeconds <= 61 && !isLive) ||
-            (video.snippet?.title?.toLowerCase().includes('#shorts') ?? false);
-
-          return {
-            id: video.id!,
-            title: video.snippet?.title ?? 'Untitled',
-            thumbnailUrl:
-              video.snippet?.thumbnails?.high?.url ??
-              video.snippet?.thumbnails?.default?.url ??
-              null,
-            publishedAt: video.snippet?.publishedAt ?? new Date().toISOString(),
-            viewCount: parseInt(video.statistics?.viewCount ?? '0', 10),
-            isShort,
-            isLive,
-            tags: video.snippet?.tags ?? [],
-          };
-        }) ?? []
-      );
+      return allVideos;
     } catch (error) {
       this.logger.error(
         `Failed to fetch videos from playlist: ${uploadsPlaylistId}`,

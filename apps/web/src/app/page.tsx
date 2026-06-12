@@ -2,6 +2,7 @@ import { Flame, TrendingUp, BarChart3, ExternalLink } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { createClient } from '@/lib/supabase/server';
 import { LeaderboardList } from '@/components/leaderboard/leaderboard-list';
+import { InfoTooltip } from '@/components/ui/info-tooltip';
 import type { VideoWithChannel, Channel } from '@/types/database';
 
 // Revalidate every 5 minutes for near-real-time data
@@ -58,6 +59,7 @@ export default async function HomePage() {
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
+        timeZone: 'Asia/Bangkok',
       });
     }
   }
@@ -70,17 +72,21 @@ export default async function HomePage() {
   return (
     <main className="flex-1">
       {/* Header */}
-      <header className="border-b border-border/30 glass sticky top-0 z-50">
+      <header className="border-b border-white/5 bg-background/40 backdrop-blur-xl sticky top-0 z-50 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
-              <Flame className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-purple-900/20 border border-white/10 bg-card">
+              <img
+                src="/icon.png"
+                alt="YT Trend Tracker Icon"
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight">
+              <h1 className="text-lg font-bold tracking-tight text-gradient-cyan">
                 YT Trend Tracker
               </h1>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground font-medium">
                 Views Per Hour Leaderboard
               </p>
             </div>
@@ -90,7 +96,7 @@ export default async function HomePage() {
             href="https://github.com/krizad/yt-trend-tracker"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white text-xs font-medium transition-all duration-300 shadow-sm"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Open Source</span>
@@ -101,25 +107,31 @@ export default async function HomePage() {
       {/* Hero Stats */}
       <section className="max-w-5xl mx-auto px-4 py-8">
         <div className="grid grid-cols-3 gap-3 mb-8">
-          <div className="rounded-xl glass p-4 text-center">
+          <div className="rounded-xl glass p-4 text-center border-t border-white/10 shadow-lg">
             <div className="flex items-center justify-center mb-2">
               <TrendingUp className="w-5 h-5 text-accent" />
             </div>
             <p className="text-2xl font-bold text-gradient-fire">
               {formatNumber(topVPH)}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">Top VPH</p>
+            <p className="text-xs text-muted-foreground mt-1 flex items-center justify-center">
+              Top VPH
+              <InfoTooltip content="VPH (Views Per Hour) คือความเร็วในการเพิ่มขึ้นของยอดวิว คำนวณจากการนำยอดวิวล่าสุด ลบกับยอดวิวรอบที่แล้ว แล้วหารด้วยระยะเวลาที่ห่างกัน (ชั่วโมง)" />
+            </p>
           </div>
-          <div className="rounded-xl glass p-4 text-center">
+          <div className="rounded-xl glass p-4 text-center border-t border-white/10 shadow-lg">
             <div className="flex items-center justify-center mb-2">
               <BarChart3 className="w-5 h-5 text-accent" />
             </div>
             <p className="text-2xl font-bold text-gradient-cyan">
               {totalVideos}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">Videos Tracked</p>
+            <p className="text-xs text-muted-foreground mt-1 flex items-center justify-center gap-1">
+              Videos Tracked
+              <InfoTooltip content="ระบบดึงวิดีโอปกติ (ไม่รวม Shorts/Live) จำนวนอย่างน้อย 50 คลิปล่าสุดต่อช่อง และนำมาแสดงผล 50 อันดับแรกที่มีความแรงสูงสุด" />
+            </p>
           </div>
-          <div className="rounded-xl glass p-4 text-center">
+          <div className="rounded-xl glass p-4 text-center border-t border-white/10 shadow-lg">
             <div className="flex items-center justify-center mb-2">
               <Flame className="w-5 h-5 text-accent" />
             </div>
@@ -135,8 +147,14 @@ export default async function HomePage() {
         {/* Leaderboard Title */}
         <div className="flex items-center gap-2 mb-4">
           <Flame className="w-5 h-5 text-orange-400" />
-          <h2 className="text-xl font-bold">Trending Now</h2>
-          <span className="text-xs text-muted-foreground ml-auto">
+          <h2 className="text-xl font-bold flex items-center">
+            Trending Now
+            <InfoTooltip
+              side="right"
+              content="ระบบจะดึงข้อมูลยอดวิวล่าสุดผ่าน YouTube API อัตโนมัติทุกๆ 2 ชั่วโมง เพื่อนำมาวิเคราะห์และจัดอันดับความแรง (Trend) ของวิดีโอแต่ละคลิป"
+            />
+          </h2>
+          <span className="text-xs text-muted-foreground ml-auto bg-black/20 px-2.5 py-1 rounded-full border border-white/5">
             {latestUpdate !== 'N/A'
               ? `Updated: ${latestUpdate}`
               : 'Updated every 2 hours'}
@@ -148,15 +166,33 @@ export default async function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border/20 mt-auto">
-        <div className="max-w-5xl mx-auto px-4 py-6 text-center">
-          <p className="text-xs text-muted-foreground">
+      <footer className="border-t border-white/5 mt-auto bg-background/20 backdrop-blur-md">
+        <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col items-center justify-center gap-4">
+          <div className="w-8 h-8 rounded-lg overflow-hidden opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300">
+            <img
+              src="/icon.png"
+              alt="Icon"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground/80">
             Built with{' '}
-            <span className="text-gradient-cyan font-medium">
+            <span className="text-gradient-cyan font-semibold">
               NestJS + Next.js + Supabase
-            </span>{' '}
-            • Open Source • {new Date().getFullYear()}
+            </span>
           </p>
+          <div className="flex items-center gap-4 text-xs text-muted-foreground/60">
+            <span>© {new Date().getFullYear()} KriZad</span>
+            <span>•</span>
+            <a
+              href="https://github.com/krizad/yt-trend-tracker"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="hover:text-white transition-colors"
+            >
+              Open Source
+            </a>
+          </div>
         </div>
       </footer>
     </main>

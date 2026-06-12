@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { LeaderboardCard } from './leaderboard-card';
 import { VideoDetailModal } from '../video-detail-modal';
 import type { VideoWithChannel } from '@/types/database';
@@ -29,30 +30,47 @@ export function LeaderboardList({ videos, channels }: LeaderboardListProps) {
 
   return (
     <div>
-      {/* Channel Filter */}
-      {channels.length > 1 && (
-        <div className="flex flex-wrap gap-2 mb-6">
+      {/* Channel Filter Tabs */}
+      {channels.length > 0 && (
+        <div className="flex items-center gap-1 mb-6 p-1.5 bg-background/40 backdrop-blur-xl border border-white/10 rounded-2xl w-full sm:w-fit max-w-full overflow-x-auto no-scrollbar shadow-sm">
           <button
             onClick={() => setActiveChannel('all')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+            className={`relative px-4 py-2 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap ${
               activeChannel === 'all'
-                ? 'bg-accent text-accent-foreground glow-cyan'
-                : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                ? 'text-white'
+                : 'text-muted-foreground hover:text-white/80'
             }`}
           >
-            All Channels
+            {activeChannel === 'all' && (
+              <motion.div
+                layoutId="active-tab"
+                className="absolute inset-0 bg-white/10 border border-white/20 rounded-xl shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-1.5">
+              <span className="text-base leading-none">🔥</span> All
+            </span>
           </button>
+          
           {channels.map((ch) => (
             <button
               key={ch.id}
               onClick={() => setActiveChannel(ch.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+              className={`relative px-4 py-2 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap ${
                 activeChannel === ch.id
-                  ? 'bg-accent text-accent-foreground glow-cyan'
-                  : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                  ? 'text-white'
+                  : 'text-muted-foreground hover:text-white/80'
               }`}
             >
-              {ch.name}
+              {activeChannel === ch.id && (
+                <motion.div
+                  layoutId="active-tab"
+                  className="absolute inset-0 bg-white/10 border border-white/20 rounded-xl shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-10">{ch.name}</span>
             </button>
           ))}
         </div>

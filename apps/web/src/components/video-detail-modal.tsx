@@ -64,6 +64,7 @@ export function VideoDetailModal({
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
+        timeZone: 'Asia/Bangkok',
       }),
       views: s.view_count,
     })) ?? [];
@@ -145,6 +146,7 @@ export function VideoDetailModal({
                     {new Date(video.published_at).toLocaleDateString('th-TH', {
                       month: 'short',
                       day: 'numeric',
+                      timeZone: 'Asia/Bangkok',
                     })}
                   </span>
                 </div>
