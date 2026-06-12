@@ -5,6 +5,7 @@ services:
   - type: web
     name: yt-trend-api
     runtime: node
+    plan: free
     # ชี้ไปยัง Root ของ Monorepo เพราะเราใช้ pnpm workspace
     rootDir: .
     # คำสั่ง Build: ติดตั้ง pnpm และ build เฉพาะ api
