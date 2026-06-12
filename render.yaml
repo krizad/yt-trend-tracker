@@ -4,7 +4,7 @@ services:
   # -------------------------
   - type: web
     name: yt-trend-api
-    env: node
+    runtime: node
     # ชี้ไปยัง Root ของ Monorepo เพราะเราใช้ pnpm workspace
     rootDir: .
     # คำสั่ง Build: ติดตั้ง pnpm และ build เฉพาะ api
@@ -21,22 +21,3 @@ services:
       - key: SUPABASE_ANON_KEY
         sync: false
 
-  # -------------------------
-  # 2. Web Service (Next.js)
-  # -------------------------
-  - type: web
-    name: yt-trend-web
-    env: node
-    rootDir: .
-    # คำสั่ง Build: ติดตั้ง pnpm และใช้ next build โดยตรงเพื่อข้ามการเรียก dotenv
-    buildCommand: corepack enable && corepack prepare pnpm@latest --activate && pnpm install && cd apps/web && pnpm exec next build
-    # คำสั่ง Start: รัน next start โดยใช้ PORT ที่ Render กำหนดให้
-    startCommand: cd apps/web && pnpm exec next start -p $PORT
-    envVars:
-      - key: NEXT_PUBLIC_API_URL
-        # ให้ Next.js ชี้ไปหา API ด้านบน (เปลี่ยนเป็น URL จริงได้ภายหลัง)
-        value: https://yt-trend-api.onrender.com
-      - key: NEXT_PUBLIC_SUPABASE_URL
-        sync: false
-      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
-        sync: false
