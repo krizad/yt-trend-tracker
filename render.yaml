@@ -9,7 +9,7 @@ services:
     # ชี้ไปยัง Root ของ Monorepo เพราะเราใช้ pnpm workspace
     rootDir: .
     # คำสั่ง Build: ติดตั้ง pnpm และ build เฉพาะ api
-    buildCommand: corepack enable && corepack prepare pnpm@latest --activate && pnpm install && pnpm build:api
+    buildCommand: npm install -g pnpm && pnpm install && pnpm build:api
     # คำสั่ง Start: รัน production build ของ api
     startCommand: pnpm --filter api run start:prod
     envVars:
