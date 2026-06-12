@@ -6,6 +6,7 @@
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?style=flat-square&logo=supabase&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![pnpm](https://img.shields.io/badge/pnpm-F69220?style=flat-square&logo=pnpm&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 ## Architecture
@@ -20,6 +21,7 @@
                     │  NestJS Worker  │
                     │  (Cron: 2hrs)   │
                     │  Fetch → VPH    │
+                    │  POST /cron/track
                     └────────┬────────┘
                              │ Service Role Key (Write)
                     ┌────────▼────────┐
@@ -36,7 +38,7 @@
 
 | Component | Role |
 |-----------|------|
-| **NestJS** (`apps/api`) | Cron worker — fetches YouTube stats, records snapshots, calculates VPH |
+| **NestJS** (`apps/api`) | Cron worker — fetches YouTube stats, records snapshots, calculates VPH & acceleration |
 | **Next.js** (`apps/web`) | Dashboard — displays Leaderboard sorted by VPH with charts |
 | **Supabase** | Managed PostgreSQL with RLS — public read, service_role write |
 
@@ -60,7 +62,7 @@ pnpm install
 ### 2. Setup Supabase
 
 1. Create a new project on [supabase.com](https://supabase.com/dashboard)
-2. Go to **SQL Editor** and run the contents of `supabase/migrations/001_initial_schema.sql`
+2. Go to **SQL Editor** and run **all** migration files from `supabase/migrations/` in order (starting with `001_initial_schema.sql`)
 3. Copy your keys from **Project Settings → API**
 
 ### 3. Configure Environment
@@ -78,8 +80,8 @@ SUPABASE_SERVICE_ROLE_KEY="eyJ..."
 NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJ..."
 YOUTUBE_API_KEY="AIzaSy..."
-TARGET_CHANNEL_IDS="UCxxxxxx,UCyyyyyy"  # comma-separated
-CRON_INTERVAL="0 */2 * * *"            # every 2 hours
+TARGET_CHANNEL_IDS="UCxxxxxx,@handle,https://www.youtube.com/@handle"
+CRON_INTERVAL="0 */2 * * *"
 ```
 
 ### 4. Run
@@ -98,58 +100,77 @@ pnpm dev:web   # Next.js on port 3000
 ```
 yt-trend-tracker/
 ├── apps/
-│   ├── api/                    # NestJS Backend
+│   ├── api/                          # NestJS Backend
 │   │   └── src/
-│   │       ├── supabase/       # Supabase client module (DI)
-│   │       ├── youtube/        # YouTube API service
-│   │       └── tracker/        # Cron job + VPH calculation
-│   └── web/                    # Next.js Frontend
+│   │       ├── supabase/             # Supabase client module (DI)
+│   │       ├── youtube/              # YouTube API service
+│   │       └── tracker/              # Cron job + VPH calculation
+│   └── web/                          # Next.js Frontend
 │       └── src/
-│           ├── app/            # App Router pages
-│           ├── components/     # UI components + Shadcn/ui
-│           ├── lib/supabase/   # SSR + Browser Supabase clients
-│           └── types/          # Shared TypeScript types
+│           ├── app/                  # App Router (SSR + ISR)
+│           ├── components/
+│           │   ├── leaderboard/      # Leaderboard cards & list
+│           │   └── ui/               # Shadcn/ui v4 components
+│           ├── lib/supabase/         # Server + Browser clients
+│           └── types/                # TypeScript interfaces
 ├── supabase/
-│   └── migrations/             # SQL schema for Supabase
+│   └── migrations/                   # SQL migrations (run in order)
 ├── .env.example
+├── render.yaml                       # Render.com deploy config (API only)
 ├── pnpm-workspace.yaml
 └── README.md
 ```
 
-## How VPH Works
+## How It Works
 
-**Views Per Hour (VPH)** measures how fast a video is gaining views right now:
+### VPH (Views Per Hour)
+
+Measures how fast a video is gaining views right now:
 
 ```
-VPH = (currentViews - viewsFrom2HoursAgo) / hoursDifference
+VPH = (currentViews - historicalViews) / hoursDifference
 ```
+
+### Acceleration
+
+Tracks whether a video's momentum is increasing or decreasing:
+
+```
+Acceleration = VPH(today) - VPH(yesterday)
+```
+
+- Positive acceleration = video is gaining steam
+- Negative acceleration = video is slowing down
+
+### The Pipeline
 
 - Every 2 hours, the NestJS cron fetches the latest view counts from YouTube
 - Each fetch creates a **snapshot** in `video_snapshots`
 - VPH is calculated by comparing the latest snapshot vs the one from ~2 hours ago
-- Higher VPH = the video is gaining views faster = it's trending 🔥
+- Once per day, `vph_yesterday` is stored and `acceleration` is computed
+- The cron also runs immediately on app bootstrap and exposes `POST /cron/track` for external triggers
 
 ## Database Schema
 
-| Table | Purpose |
-|-------|---------|
-| `channels` | YouTube channel info (name, avatar, custom URL) |
-| `videos` | Video metadata + latest VPH value |
-| `video_snapshots` | Historical view count records for VPH calculation |
+| Table | Key Columns |
+|-------|-------------|
+| `channels` | `id`, `name`, `custom_url`, `avatar_url`, `created_at` |
+| `videos` | `id`, `channel_id`, `title`, `thumbnail_url`, `published_at`, `view_count`, `vph`, `vph_yesterday`, `acceleration`, `is_short`, `is_live`, `tags`, `updated_at` |
+| `video_snapshots` | `id`, `video_id`, `view_count`, `tracked_at` |
 
 ## Multi-Channel Support
 
-Add multiple YouTube channel IDs separated by commas:
+`TARGET_CHANNEL_IDS` accepts comma-separated channel IDs, YouTube URLs, or `@handles`:
 
 ```env
-TARGET_CHANNEL_IDS="UCxxxxxx,UCyyyyyy,UCzzzzzz"
+TARGET_CHANNEL_IDS="UCxxxxxx,@handle,https://www.youtube.com/@channelname"
 ```
 
 The dashboard includes a channel filter so you can view trending videos per channel or across all channels.
 
 ## Deployment (Free Tier Architecture)
 
-To host this project completely for free and ensure the background cron jobs run reliably, we recommend separating the frontend and backend deployments.
+To host this project completely for free and ensure the background cron jobs run reliably, separate the frontend and backend deployments.
 
 **Why not deploy the API on Vercel?**
 Vercel's Hobby (Free) tier has a 10-second Serverless Function timeout and limits Cron Jobs to 1 execution per day. The YouTube tracking process typically takes ~15-20 seconds and needs to run every 2 hours, which will cause timeouts and fail on Vercel's free tier.
@@ -166,7 +187,7 @@ Vercel's Hobby (Free) tier has a 10-second Serverless Function timeout and limit
 
 3. **Database & Cron Trigger** 🐘
    - Use **Supabase** (PostgreSQL)
-   - Supabase has built-in Cron Jobs via the `pg_cron` and `pg_net` extensions, which can be used to wake up your Render API and trigger the tracking cycle asynchronously.
+   - Supabase has built-in Cron Jobs via the `pg_cron` and `pg_net` extensions, which can wake up your Render API and trigger the tracking cycle asynchronously.
 
 ### Setting up Supabase Cron to Trigger the API
 
@@ -197,13 +218,14 @@ SELECT cron.schedule(
 | Technology | Version | Purpose |
 |------------|---------|---------|
 | Next.js | 16 | SSR Dashboard (App Router) |
-| NestJS | 11 | Cron Worker + API |
+| NestJS | 11 | Cron Worker + REST API |
 | Supabase | Latest | PostgreSQL + Auth + RLS |
-| Shadcn/ui | Latest | UI Components |
 | Tailwind CSS | 4 | Styling |
-| Recharts | 2 | Data Visualization |
+| Shadcn/ui | 4 | UI Components (`base-nova` theme) |
+| Recharts | 3 | Data Visualization |
 | Framer Motion | 12 | Animations |
-| pnpm | 10+ | Package Manager |
+| Lucide React | 1 | Icons |
+| pnpm | 10 | Package Manager |
 
 ## License
 
