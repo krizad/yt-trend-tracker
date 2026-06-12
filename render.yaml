@@ -8,10 +8,10 @@ services:
     plan: free
     # ชี้ไปยัง Root ของ Monorepo เพราะเราใช้ pnpm workspace
     rootDir: .
-    # คำสั่ง Build: ติดตั้ง pnpm และ build เฉพาะ api
-    buildCommand: npm install -g pnpm && pnpm install && pnpm build:api
+    # คำสั่ง Build: ใช้ npx เรียก pnpm แบบไม่ต้องติดตั้งแบบ Global
+    buildCommand: npx pnpm install && npx pnpm build:api
     # คำสั่ง Start: รัน production build ของ api
-    startCommand: pnpm --filter api run start:prod
+    startCommand: node apps/api/dist/main
     envVars:
       - key: PORT
         value: 10000
