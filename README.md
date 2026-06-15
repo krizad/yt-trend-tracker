@@ -82,6 +82,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJ..."
 YOUTUBE_API_KEY="AIzaSy..."
 TARGET_CHANNEL_IDS="UCxxxxxx,@handle,https://www.youtube.com/@handle"
 CRON_INTERVAL="0 */2 * * *"
+NEXT_PUBLIC_APP_TITLE="YT Trend Tracker"
+NEXT_PUBLIC_APP_DESCRIPTION="Open-source YouTube trend tracker. See which videos are going viral right now with real-time Views Per Hour (VPH) analytics."
 ```
 
 ### 4. Run

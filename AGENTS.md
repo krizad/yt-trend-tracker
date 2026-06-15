@@ -25,6 +25,7 @@ pnpm --filter api test:e2e  # API e2e tests
 - `apps/api` loads it via NestJS `ConfigModule` with `envFilePath: ['.env', '../../.env']`.
 - Both `SUPABASE_SERVICE_ROLE_KEY` (API, write) and `SUPABASE_ANON_KEY`/`NEXT_PUBLIC_SUPABASE_ANON_KEY` (web, read) are required.
 - `TARGET_CHANNEL_IDS` accepts comma-separated values: channel IDs (`UC...`), YouTube URLs, or `@handles`.
+- App configuration uses `NEXT_PUBLIC_APP_TITLE` and `NEXT_PUBLIC_APP_DESCRIPTION` to set the branding for the project.
 
 ## Database & Migrations
 
@@ -36,7 +37,7 @@ Supabase (managed PostgreSQL). No ORM — both apps use `@supabase/supabase-js` 
 
 ## Architecture
 
-```
+```text
 YouTube API v3 → NestJS (cron every 2h, service_role key) → Supabase → Next.js (SSR + ISR, anon key)
 ```
 
