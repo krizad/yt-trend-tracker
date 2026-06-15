@@ -18,8 +18,9 @@ export function LeaderboardCard({
   onClick,
 }: LeaderboardCardProps) {
   const isTop3 = rank <= 3;
-  const isHot = video.vph >= 10000;
-  const isMild = video.vph >= 1000;
+  const displayVph = Math.max(0, video.vph);
+  const isHot = displayVph >= 10000;
+  const isMild = displayVph >= 1000;
 
   const getRankBadge = () => {
     switch (rank) {
@@ -55,7 +56,7 @@ export function LeaderboardCard({
       return (
         <Badge className="glow-fire bg-gradient-to-r from-orange-500 to-red-500 text-white border-none gap-1 font-bold">
           <Flame className="w-3 h-3" />
-          {formatVPH(video.vph)}
+          {formatVPH(displayVph)}
         </Badge>
       );
     }
@@ -63,14 +64,14 @@ export function LeaderboardCard({
       return (
         <Badge className="glow-cyan bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-none gap-1 font-semibold">
           <TrendingUp className="w-3 h-3" />
-          {formatVPH(video.vph)}
+          {formatVPH(displayVph)}
         </Badge>
       );
     }
     return (
       <Badge variant="secondary" className="gap-1 font-medium">
         <Zap className="w-3 h-3" />
-        {formatVPH(video.vph)}
+        {formatVPH(displayVph)}
       </Badge>
     );
   };
@@ -188,8 +189,8 @@ export function LeaderboardCard({
                   <span
                     className={`text-[10px] font-bold ${video.acceleration > 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                   >
-                    {video.acceleration > 0 ? '+' : ''}
-                    {formatVPH(video.acceleration)} / 24h
+                    {video.acceleration > 0 ? '▲ ' : '▼ '}
+                    {formatVPH(Math.abs(video.acceleration))} / 24h
                   </span>
                 ) : (
                   <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">
@@ -216,8 +217,9 @@ export function LeaderboardCard({
   );
 }
 
-function formatVPH(vph: number): string {
-  if (vph >= 1_000_000) return `${(vph / 1_000_000).toFixed(1)}M`;
-  if (vph >= 1_000) return `${(vph / 1_000).toFixed(1)}K`;
-  return vph.toFixed(0);
+function formatVPH(value: number): string {
+  const absValue = Math.abs(value);
+  if (absValue >= 1_000_000) return `${(absValue / 1_000_000).toFixed(1)}M`;
+  if (absValue >= 1_000) return `${(absValue / 1_000).toFixed(1)}K`;
+  return absValue.toFixed(0);
 }

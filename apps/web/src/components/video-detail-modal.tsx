@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AreaChart,
@@ -50,10 +50,15 @@ export function VideoDetailModal({
     setLoading(false);
   };
 
-  const handleOpenChange = (isOpen: boolean) => {
-    if (isOpen && video) {
+  useEffect(() => {
+    if (open && video) {
       fetchSnapshots(video.id);
+    } else if (!open) {
+      setSnapshots([]);
     }
+  }, [open, video]);
+
+  const handleOpenChange = (isOpen: boolean) => {
     onOpenChange(isOpen);
   };
 
@@ -77,7 +82,7 @@ export function VideoDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="glass !bg-card/90 border-border/50 !max-w-[95vw] sm:!max-w-3xl md:!max-w-4xl lg:!max-w-5xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="glass bg-card/90! border-border/50 max-w-[95vw]! sm:max-w-3xl! md:max-w-4xl! lg:max-w-5xl! max-h-[85vh] overflow-y-auto">
         {video && (
           <>
             <DialogHeader>
@@ -161,13 +166,14 @@ export function VideoDetailModal({
                   View Growth Over Time
                 </h3>
 
-                {loading ? (
+                {loading && (
                   <div className="h-72 flex items-center justify-center">
                     <div className="animate-pulse text-muted-foreground text-sm">
                       Loading chart data...
                     </div>
                   </div>
-                ) : chartData.length > 1 ? (
+                )}
+                {!loading && chartData.length > 1 && (
                   <AnimatePresence>
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
@@ -249,7 +255,8 @@ export function VideoDetailModal({
                       </ResponsiveContainer>
                     </motion.div>
                   </AnimatePresence>
-                ) : (
+                )}
+                {!loading && chartData.length <= 1 && (
                   <div className="h-72 flex items-center justify-center text-muted-foreground text-sm">
                     Not enough data yet. Need at least 2 snapshots.
                   </div>

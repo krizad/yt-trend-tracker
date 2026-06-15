@@ -10,9 +10,9 @@ const prompt = Prompt({
 });
 
 export const metadata: Metadata = {
-  title: 'YT Trend Tracker — Views Per Hour Leaderboard',
+  title: process.env.NEXT_PUBLIC_APP_TITLE || 'YT Trend Tracker — Views Per Hour Leaderboard',
   description:
-    'Open-source YouTube trend tracker. See which videos are going viral right now with real-time Views Per Hour (VPH) analytics.',
+    process.env.NEXT_PUBLIC_APP_DESCRIPTION || 'Open-source YouTube trend tracker. See which videos are going viral right now with real-time Views Per Hour (VPH) analytics.',
   keywords: [
     'YouTube',
     'trend',
