@@ -2,6 +2,8 @@
 
 > Open-source YouTube Trend Tracker — Track **VPH (Views Per Hour)** across multiple channels and see which videos are going viral right now.
 
+**Live Demo:** [https://the-ghost-trend.vercel.app/](https://the-ghost-trend.vercel.app/)
+
 ![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=flat-square&logo=nestjs&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?style=flat-square&logo=supabase&logoColor=white)

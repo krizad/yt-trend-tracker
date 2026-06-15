@@ -78,13 +78,13 @@ export default async function HomePage() {
             <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-purple-900/20 border border-white/10 bg-card">
               <img
                 src="/icon.png"
-                alt="YT Trend Tracker Icon"
+                alt={`${process.env.NEXT_PUBLIC_APP_TITLE || 'YT Trend Tracker'} Icon`}
                 className="w-full h-full object-cover"
               />
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight text-gradient-cyan">
-                YT Trend Tracker
+                {process.env.NEXT_PUBLIC_APP_TITLE || 'YT Trend Tracker'}
               </h1>
               <p className="text-xs text-muted-foreground font-medium">
                 Views Per Hour Leaderboard
