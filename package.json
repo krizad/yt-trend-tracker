@@ -4,15 +4,15 @@
   "private": true,
   "description": "Open-source YouTube Trend Tracker — Track VPH (Views Per Hour) across multiple channels",
   "scripts": {
-    "dev:api": "pnpm --filter api run start:dev",
-    "dev:web": "pnpm --filter web run dev",
-    "dev": "pnpm run dev:api & pnpm run dev:web",
-    "build:api": "pnpm --filter api run build",
-    "build:web": "pnpm --filter web run build",
-    "build": "pnpm run build:api && pnpm run build:web",
+    "dev:api": "turbo run dev --filter=api",
+    "dev:web": "turbo run dev --filter=web",
+    "dev": "turbo run dev",
+    "build:api": "turbo run build --filter=api",
+    "build:web": "turbo run build --filter=web",
+    "build": "turbo run build",
     "lint:format": "pnpm -r run lint:format",
-    "lint:fix": "pnpm -r run lint:fix",
-    "lint": "pnpm -r run lint"
+    "lint:fix": "turbo run lint:fix",
+    "lint": "turbo run lint"
   },
   "keywords": [
     "youtube",
@@ -24,6 +24,7 @@
   "license": "MIT",
   "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
   "devDependencies": {
-    "dotenv-cli": "^11.0.0"
+    "dotenv-cli": "^11.0.0",
+    "turbo": "^2.10.11"
   }
 }

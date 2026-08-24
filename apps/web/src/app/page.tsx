@@ -2,13 +2,36 @@ import { Flame, TrendingUp, BarChart3, ExternalLink } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { createClient } from '@/lib/supabase/server';
 import { LeaderboardList } from '@/components/leaderboard/leaderboard-list';
+import { DateRangeFilter } from '@/components/leaderboard/date-range-filter';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import type { VideoWithChannel, Channel } from '@/types/database';
 
 // Revalidate every 5 minutes for near-real-time data
 export const revalidate = 300;
 
-export default async function HomePage() {
+const HOUR_MS = 60 * 60 * 1000;
+
+function parseDateParam(value: string | string[] | undefined): Date | null {
+  if (typeof value !== 'string' || !value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+
+  // Upload-date range filter; defaults to the last 7 days
+  const now = new Date();
+  const defaultFrom = new Date(now.getTime() - 7 * 24 * HOUR_MS);
+  const rawFrom = parseDateParam(params.from);
+  const rawTo = parseDateParam(params.to);
+  const rangeTo = rawTo ?? now;
+  const rangeFrom = rawFrom && rawFrom <= rangeTo ? rawFrom : defaultFrom;
+
   const supabase = await createClient();
 
   // Fetch trending videos with channel info, ordered by VPH
@@ -17,6 +40,8 @@ export default async function HomePage() {
     .select('*, channels(*), video_snapshots(view_count, tracked_at)')
     .eq('is_short', false)
     .eq('is_live', false)
+    .gte('published_at', rangeFrom.toISOString())
+    .lte('published_at', rangeTo.toISOString())
     .order('vph', { ascending: false })
     .order('view_count', { ascending: false })
     .limit(50);
@@ -160,6 +185,12 @@ export default async function HomePage() {
               : 'Updated every 2 hours'}
           </span>
         </div>
+
+        {/* Upload Date Range Filter */}
+        <DateRangeFilter
+          from={rangeFrom.toISOString()}
+          to={rangeTo.toISOString()}
+        />
 
         {/* Leaderboard */}
         <LeaderboardList videos={videos} channels={channelList} />

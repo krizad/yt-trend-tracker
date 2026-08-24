@@ -2,20 +2,22 @@
 
 ## Monorepo
 
-pnpm workspace with two packages under `apps/`. Use `pnpm --filter <name>` for package-scoped commands.
+pnpm workspace with two packages under `apps/`, orchestrated by **Turborepo** (`turbo.json` at root, TUI mode enabled). Use `pnpm --filter <name>` for package-scoped commands; root scripts run through `turbo`.
 
 ```bash
 pnpm install            # install all
-pnpm dev                # both apps concurrently (api :8080, web :3000)
+pnpm dev                # both apps via turbo TUI (api :8080, web :3000) — press 1/2 to toggle task logs, ctrl+z to suspend
 pnpm dev:api            # NestJS only
-pnpm dev:web            # Next.js only
-pnpm lint               # ESLint across all packages
+pnpm dev:web            # Next.js only (Turbopack)
+pnpm lint               # ESLint across all packages (turbo)
 pnpm lint:fix           # auto-fix
 pnpm lint:format        # Prettier across all packages
-pnpm build              # build both
+pnpm build              # build both (cached by turbo)
 pnpm --filter api test  # API unit tests (no spec files exist yet)
 pnpm --filter api test:e2e  # API e2e tests
 ```
+
+The `api` package exposes both `start:dev` and its `dev` alias (`nest start --watch`) so `turbo run dev` picks it up alongside web's `dev`.
 
 ## Env
 
